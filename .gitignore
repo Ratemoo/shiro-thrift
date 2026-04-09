@@ -1,0 +1,24 @@
+# Environment — NEVER commit these
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Uploads (store on cloud storage in production)
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db
