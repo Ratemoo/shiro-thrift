@@ -8,9 +8,12 @@ from .routes import payment_routes
 from .database import engine, Base
 from . import models, admin_user, order_model  # registers all tables
 import os
+from pathlib import Path
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 ENVIRONMENT  = os.getenv("ENVIRONMENT", "development")
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+UPLOADS_DIR = BACKEND_ROOT / "uploads"
 
 app = FastAPI(
     title="Shiro's Thrift API",
@@ -20,7 +23,9 @@ app = FastAPI(
 )
 
 # Create all DB tables
-Base.metadata.create_all(bind=engine)
+@app.on_event("startup")
+def startup():
+    Base.metadata.create_all(bind=engine)
 
 # ── SECURITY MIDDLEWARE ───────────────────────────────────
 # Only trust requests from known hosts in production
@@ -44,8 +49,8 @@ app.include_router(product.router,        prefix="/products", tags=["Products"])
 app.include_router(payment_routes.router, prefix="/payments", tags=["Payments"])
 
 # ── STATIC FILES ──────────────────────────────────────────
-os.makedirs("uploads", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+UPLOADS_DIR.mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 @app.get("/health")
 def health():

@@ -1,55 +1,56 @@
-# services:
-#   # ── BACKEND (FastAPI) ───────────────────────────────────
-#   - type: web
-#     name: shiros-thrift-api
-#     runtime: python
-#     buildCommand: pip install -r requirements.txt
-#     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-#     plan: free
-#     healthCheckPath: /health
-#     envVars:
-#       - key: ENVIRONMENT
-#         value: production
-#       - key: DATABASE_URL
-#         fromDatabase:
-#           name: shiros-thrift-db
-#           property: connectionString
-#       - key: SECRET_KEY
-#         generateValue: true          # Render auto-generates a secure random value
-#       - key: FRONTEND_URL
-#         value: https://shiros-thrift.onrender.com   # update after frontend deploys
-#       - key: MPESA_ENV
-#         value: sandbox               # change to "production" when you go live
-#       - key: MPESA_CONSUMER_KEY
-#         sync: false                  # you'll enter this manually in Render dashboard
-#       - key: MPESA_CONSUMER_SECRET
-#         sync: false
-#       - key: MPESA_SHORTCODE
-#         sync: false
-#       - key: MPESA_PASSKEY
-#         sync: false
-#       - key: MPESA_CALLBACK_URL
-#         sync: false                  # set to: https://shiros-thrift-api.onrender.com/payments/mpesa/callback
-#       - key: CALLBACK_SECRET
-#         generateValue: true
+services:
+  - type: web
+    name: shiros-thrift-api
+    runtime: python
+    rootDir: shiro-thrift-backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shiros-thrift-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://shiros-thrift.onrender.com
+      - key: PUBLIC_API_URL
+        value: https://shiros-thrift-api.onrender.com
+      - key: MPESA_ENV
+        value: sandbox
+      - key: MPESA_CONSUMER_KEY
+        sync: false
+      - key: MPESA_CONSUMER_SECRET
+        sync: false
+      - key: MPESA_SHORTCODE
+        sync: false
+      - key: MPESA_PASSKEY
+        sync: false
+      - key: MPESA_CALLBACK_URL
+        value: https://shiros-thrift-api.onrender.com/payments/mpesa/callback
+      - key: CALLBACK_SECRET
+        generateValue: true
 
-#   # ── FRONTEND (React/Vite) ───────────────────────────────
-#   - type: web
-#     name: shiros-thrift
-#     runtime: static
-#     buildCommand: npm install && npm run build
-#     staticPublishPath: ./dist
-#     plan: free
-#     routes:
-#       - type: rewrite
-#         source: /*
-#         destination: /index.html    # SPA routing fallback
-#     envVars:
-#       - key: VITE_API_URL
-#         value: https://shiros-thrift-api.onrender.com
+  - type: web
+    name: shiros-thrift
+    runtime: static
+    rootDir: shiro-thrift-frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    plan: free
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://shiros-thrift-api.onrender.com
 
-# # ── DATABASE ────────────────────────────────────────────────
-# databases:
-#   - name: shiros-thrift-db
-#     plan: free
-#     databaseName: shirosthrift
+databases:
+  - name: shiros-thrift-db
+    plan: free
+    databaseName: shirosthrift

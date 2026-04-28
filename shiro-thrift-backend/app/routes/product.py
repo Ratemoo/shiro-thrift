@@ -1,12 +1,15 @@
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, Request
 from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..database import SessionLocal
 from ..auth import require_admin
 import shutil, os, uuid
+from pathlib import Path
 
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+UPLOAD_DIR = BACKEND_ROOT / "uploads"
+PUBLIC_API_URL = os.getenv("PUBLIC_API_URL", "").rstrip("/")
+UPLOAD_DIR.mkdir(exist_ok=True)
 
 router = APIRouter()
 
@@ -30,17 +33,22 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     return p
 
 # ── ADMIN PROTECTED ───────────────────────────────────────
+def build_image_url(request: Request, filename: str) -> str:
+    base_url = PUBLIC_API_URL or str(request.base_url).rstrip("/")
+    return f"{base_url}/uploads/{filename}"
+
+
 @router.post("/upload", dependencies=[Depends(require_admin)])
-def upload_image(file: UploadFile = File(...)):
+def upload_image(request: Request, file: UploadFile = File(...)):
     allowed = {"image/jpeg", "image/png", "image/webp", "image/gif"}
     if file.content_type not in allowed:
         raise HTTPException(status_code=400, detail="Only image files allowed (JPEG, PNG, WEBP)")
     ext           = file.filename.rsplit(".", 1)[-1].lower()
     safe_name     = f"{uuid.uuid4().hex}.{ext}"
-    path          = os.path.join(UPLOAD_DIR, safe_name)
+    path          = UPLOAD_DIR / safe_name
     with open(path, "wb") as buf:
         shutil.copyfileobj(file.file, buf)
-    return {"image_url": f"http://localhost:8000/uploads/{safe_name}"}
+    return {"image_url": build_image_url(request, safe_name)}
 
 @router.post("/", response_model=schemas.ProductResponse)
 def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db), payload: dict = Depends(require_admin)):
